@@ -1,0 +1,154 @@
+{
+  "name": "auto-fmea",
+  "displayName": "Auto-FMEA",
+  "description": "Real-time, metric-based risk analysis for Python, Java, and C# — triggered on every file save inside VS Code.",
+  "version": "1.1.1",
+  "publisher": "lKursat",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "fmea",
+    "risk analysis",
+    "static analysis",
+    "cyclomatic complexity",
+    "dependency analysis",
+    "code quality",
+    "python",
+    "java",
+    "csharp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lKursat/auto-fmea"
+  },
+  "bugs": {
+    "url": "https://github.com/lKursat/auto-fmea/issues"
+  },
+  "homepage": "https://github.com/lKursat/auto-fmea#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:java",
+    "onLanguage:csharp"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "autofmea.showDashboard",
+        "title": "Auto-FMEA: Show Risk Dashboard",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "autofmea.analyzeNow",
+        "title": "Auto-FMEA: Analyze Current File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "autofmea.exportReport",
+        "title": "Auto-FMEA: Export Risk Report",
+        "icon": "$(export)"
+      },
+      {
+        "command": "autofmea.clearHistory",
+        "title": "Auto-FMEA: Clear Analysis History",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "autofmea.analyzeNow",
+          "when": "resourceLangId =~ /python|java|csharp/",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "autofmea.showDashboard"
+        },
+        {
+          "command": "autofmea.analyzeNow"
+        },
+        {
+          "command": "autofmea.exportReport"
+        },
+        {
+          "command": "autofmea.clearHistory"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Auto-FMEA",
+      "properties": {
+        "autofmea.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to the Python interpreter used to run the analysis engine."
+        },
+        "autofmea.analyzeOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically analyze files when saved."
+        },
+        "autofmea.showInlineDecorations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline risk decorations in the editor gutter."
+        },
+        "autofmea.rpnThresholdCritical": {
+          "type": "number",
+          "default": 200,
+          "description": "RPN threshold for CRITICAL risk level."
+        },
+        "autofmea.rpnThresholdHigh": {
+          "type": "number",
+          "default": 100,
+          "description": "RPN threshold for HIGH risk level."
+        },
+        "autofmea.rpnThresholdMedium": {
+          "type": "number",
+          "default": 50,
+          "description": "RPN threshold for MEDIUM risk level."
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "autofmea.dashboard",
+          "name": "FMEA Risk Dashboard",
+          "icon": "$(shield)",
+          "contextualTitle": "Auto-FMEA Risk Dashboard"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "autofmea-sidebar",
+          "title": "Auto-FMEA",
+          "icon": "$(shield)"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.9.3"
+  }
+}

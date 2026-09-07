@@ -1,0 +1,17 @@
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/tests/
+.github/
+.vscode/
+docs/
+report/
+src/
+test_samples/
+node_modules/
+tsconfig.json
+.gitignore
+*.vsix
+implementation_plan.md
+walkthrough.md
+engine/.fmea_history.json

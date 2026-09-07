@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline';">
+<title>Auto-FMEA Risk Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<!-- FMEA_DATA_INJECTION -->
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue: #388bfd;
+  --risk-critical: #f85149;
+  --risk-high: #d29922;
+  --risk-medium: #388bfd;
+  --risk-low: #3fb950;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --radius: 6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);font-size:13px;line-height:1.5;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:var(--bg-tertiary);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* Header */
+.header{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);}
+.wordmark{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent-blue);letter-spacing:-0.02em;}
+.header-actions{display:flex;gap:6px;}
+.btn{padding:5px 12px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text-primary);cursor:pointer;font-family:var(--font);font-size:12px;font-weight:500;transition:background .15s ease;}
+.btn:hover{background:var(--bg-tertiary);}
+.btn-danger{color:var(--risk-critical);border-color:var(--risk-critical);}
+.btn-danger:hover{background:rgba(248,81,73,.1);}
+
+.content{padding:16px;}
+
+/* Section titles */
+.section-title{font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:12px;}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+.stat-card.sc-critical::before{background:var(--risk-critical);}
+.stat-card.sc-high::before{background:var(--risk-high);}
+.stat-card.sc-medium::before{background:var(--risk-medium);}
+.stat-card.sc-low::before{background:var(--risk-low);}
+.stat-value{font-size:28px;font-weight:700;line-height:1;margin-bottom:4px;}
+.stat-label{font-size:12px;color:var(--text-secondary);}
+.sc-critical .stat-value{color:var(--risk-critical);}
+.sc-high .stat-value{color:var(--risk-high);}
+.sc-medium .stat-value{color:var(--risk-medium);}
+.sc-low .stat-value{color:var(--risk-low);}
+
+/* Health section */
+.health-section{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:20px;}
+.gauge-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.gauge-svg{width:120px;height:120px;}
+.gauge-bg{fill:none;stroke:var(--border);stroke-width:8;}
+.gauge-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dasharray .6s ease;}
+.gauge-pct-text{font-family:var(--font);font-size:28px;font-weight:700;fill:var(--text-primary);}
+.gauge-sub{font-size:12px;color:var(--text-secondary);}
+.health-meta{flex:1;}
+.health-meta-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
+.health-meta p{color:var(--text-secondary);font-size:12px;margin-bottom:10px;}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.meta-item{background:var(--bg-tertiary);border-radius:var(--radius);padding:8px 12px;}
+.meta-label{font-size:10px;color:var(--text-secondary);}
+.meta-value{font-size:16px;font-weight:600;color:var(--accent-blue);}
+
+/* Two-column */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+
+/* Trend chart */
+.trend-section{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.trend-subtitle{font-size:11px;color:var(--text-secondary);margin-bottom:4px;}
+.trend-legend{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;font-size:11px;}
+.trend-legend-item{display:flex;align-items:center;gap:5px;}
+.trend-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.trend-legend-rpn{opacity:0.7;}
+.trend-placeholder{text-align:center;padding:24px 0;color:var(--text-secondary);font-size:13px;}
+.trend-svg{display:block;width:100%;}
+.trend-dot{cursor:pointer;}
+.trend-dot:hover{r:7;}
+.trend-tip{position:fixed;background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-primary);padding:6px 12px;border-radius:var(--radius);font-size:11px;white-space:pre-line;z-index:100;pointer-events:none;transform:translate(-50%,-100%);line-height:1.5;}
+
+/* Matrix */
+.matrix-section{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.matrix-container{position:relative;}
+.matrix-labels-y{position:absolute;left:0;top:0;bottom:24px;display:flex;flex-direction:column-reverse;justify-content:space-around;font-size:11px;color:var(--text-secondary);width:14px;text-align:right;}
+.matrix-wrap{margin-left:22px;margin-bottom:4px;}
+.matrix-grid{display:grid;grid-template-columns:repeat(5,36px);grid-template-rows:repeat(5,36px);border:1px solid var(--border);}
+.matrix-cell{background:var(--bg-tertiary);border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;}
+.matrix-labels-x{display:flex;width:180px;margin-left:22px;font-size:11px;color:var(--text-secondary);}
+.matrix-labels-x span{flex:1;text-align:center;}
+.matrix-axis-label{text-align:center;font-size:11px;color:var(--text-secondary);margin-top:4px;margin-left:22px;}
+.dot{position:absolute;width:10px;height:10px;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);cursor:pointer;transition:transform .15s ease;border:1px solid rgba(255,255,255,.2);}
+.dot:hover{transform:translate(-50%,-50%) scale(1.6);z-index:10;}
+.dot-CRITICAL{background:var(--risk-critical);}
+.dot-HIGH{background:var(--risk-high);}
+.dot-MEDIUM{background:var(--risk-medium);}
+.dot-LOW{background:var(--risk-low);}
+
+/* Top risks */
+.top-risks{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.risk-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.risk-item:last-child{border-bottom:none;}
+.risk-rank{font-size:12px;color:var(--text-secondary);width:22px;text-align:right;}
+.risk-name{flex:1;font-weight:600;font-size:13px;}
+.rpn-badge{font-size:13px;font-weight:700;margin-left:6px;}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.badge-CRITICAL{background:rgba(248,81,73,.15);color:var(--risk-critical);}
+.badge-HIGH{background:rgba(210,153,34,.15);color:var(--risk-high);}
+.badge-MEDIUM{background:rgba(56,139,253,.15);color:var(--risk-medium);}
+.badge-LOW{background:rgba(63,185,80,.15);color:var(--risk-low);}
+
+/* Risk color text */
+.rc-CRITICAL{color:var(--risk-critical);}
+.rc-HIGH{color:var(--risk-high);}
+.rc-MEDIUM{color:var(--risk-medium);}
+.rc-LOW{color:var(--risk-low);}
+
+/* Table */
+.table-section{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;color:var(--text-secondary);font-size:12px;font-weight:600;padding:8px 10px;background:var(--bg-tertiary);border-bottom:1px solid var(--border);}
+td{padding:7px 10px;color:var(--text-secondary);border-bottom:1px solid rgba(48,54,61,.4);}
+tr:last-child td{border-bottom:none;}
+tr.row-even td{background:var(--bg-primary);}
+tr.row-odd td{background:var(--bg-secondary);}
+tr:hover td{background:var(--bg-tertiary);transition:background .15s ease;}
+td.col-name{color:var(--text-primary);font-weight:600;}
+td.col-file{font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+td.col-rpn{font-weight:700;}
+
+/* Recommendations */
+.recs-section{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.rec-card{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;border-left:3px solid var(--border);}
+.rec-card.rl-CRITICAL{border-left-color:var(--risk-critical);}
+.rec-card.rl-HIGH{border-left-color:var(--risk-high);}
+.rec-card.rl-MEDIUM{border-left-color:var(--risk-medium);}
+.rec-card.rl-LOW{border-left-color:var(--risk-low);}
+.rec-header{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;background:var(--bg-tertiary);transition:background .15s ease;user-select:none;}
+.rec-header:hover{background:var(--bg-primary);}
+.rec-chevron{font-size:11px;color:var(--text-secondary);transition:transform .15s ease;width:14px;flex-shrink:0;}
+.rec-chevron.open{transform:rotate(90deg);}
+.rec-header .rec-cls-name{font-weight:600;font-size:13px;flex:1;color:var(--text-primary);}
+.rec-header .rec-rpn{font-size:12px;font-weight:600;color:var(--text-secondary);}
+.rec-body{display:none;padding:0;}
+.rec-body.open{display:block;}
+.rec-item{padding:8px 12px;font-size:12px;color:var(--text-secondary);line-height:1.6;border-top:1px solid var(--border);}
+.rec-item .rec-arrow{color:var(--accent-blue);font-weight:600;margin-right:4px;}
+.tag-chip{display:inline;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--text-primary);margin-right:4px;white-space:nowrap;}
+
+/* Indicator dots (replacing emojis) */
+.idot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.idot-critical{background:var(--risk-critical);}
+.idot-high{background:var(--risk-high);}
+.idot-medium{background:var(--risk-medium);}
+.idot-low{background:var(--risk-low);}
+
+/* Tooltip */
+.tip{position:relative;}
+.tip:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-primary);padding:4px 10px;border-radius:var(--radius);font-size:11px;white-space:nowrap;z-index:100;pointer-events:none;}
+
+/* Empty state */
+.empty-state{display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text-secondary);font-size:14px;}
+
+/* Footer */
+.footer{text-align:center;color:var(--text-secondary);font-size:10px;padding:16px 0 8px;border-top:1px solid var(--border);margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="wordmark">Auto-FMEA</span>
+  <div class="header-actions">
+    <button class="btn" onclick="vscode.postMessage({command:'analyzeNow'})">Analyze</button>
+    <button class="btn" onclick="vscode.postMessage({command:'exportReport'})">Export</button>
+    <button class="btn btn-danger" onclick="vscode.postMessage({command:'clearHistory'})">Clear</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="dashboard">
+    <div class="empty-state">Save a Python, Java, or C# file to run analysis.</div>
+  </div>
+</div>
+
+<div class="footer" id="footer">Auto-FMEA v1.0.0</div>
+
+<script>
+(function(){
+  const vscode = acquireVsCodeApi();
+  window.vscode = vscode;
+
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  function riskLabel(level){return{CRITICAL:'Critical',HIGH:'High',MEDIUM:'Medium',LOW:'Low'}[level]||level;}
+
+  function healthColor(pct){
+    if(pct>=80)return'var(--risk-low)';
+    if(pct>=60)return'var(--risk-medium)';
+    if(pct>=40)return'var(--risk-high)';
+    return'var(--risk-critical)';
+  }
+
+  function renderTag(text){
+    var m=text.match(/^\[([^\]]+)\]\s*/);
+    if(!m)return'<span class="rec-arrow">\u2192</span> '+esc(text);
+    var tag=m[1],rest=text.substring(m[0].length);
+    return'<span class="rec-arrow">\u2192</span> <span class="tag-chip">'+esc(tag)+'</span> '+esc(rest);
+  }
+
+  function render(data){
+    var result=data.result,summary=data.summary,all=data.all,classes=data.classes;
+    var health=summary.project_health_score;
+    var circ=2*Math.PI*50;
+    var filled=(health/100)*circ;
+    var hColor=healthColor(health);
+
+    var statsHtml=
+'<div class="stats-grid">'+
+'<div class="stat-card sc-critical"><div class="stat-value">'+summary.critical_count+'</div><div class="stat-label"><span class="idot idot-critical"></span>Critical</div></div>'+
+'<div class="stat-card sc-high"><div class="stat-value">'+summary.high_count+'</div><div class="stat-label"><span class="idot idot-high"></span>High</div></div>'+
+'<div class="stat-card sc-medium"><div class="stat-value">'+summary.medium_count+'</div><div class="stat-label"><span class="idot idot-medium"></span>Medium</div></div>'+
+'<div class="stat-card sc-low"><div class="stat-value">'+summary.low_count+'</div><div class="stat-label"><span class="idot idot-low"></span>Low</div></div>'+
+'</div>';
+
+    var healthHtml=
+'<div class="health-section">'+
+'<div class="gauge-wrap">'+
+'<svg class="gauge-svg" viewBox="0 0 120 120">'+
+'<circle class="gauge-bg" cx="60" cy="60" r="50"/>'+
+'<circle class="gauge-fill" cx="60" cy="60" r="50" stroke="'+hColor+'" stroke-dasharray="'+filled+' '+circ+'" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>'+
+'<text class="gauge-pct-text" x="60" y="60" text-anchor="middle" dominant-baseline="middle">'+health+'%</text>'+
+'</svg>'+
+'<div class="gauge-sub">Project health</div>'+
+'</div>'+
+'<div class="health-meta">'+
+'<div class="health-meta-title">Project health score</div>'+
+'<p>Score = 100 \u2212 (avg RPN \u00f7 10) \u2212 penalties. Higher is better.</p>'+
+'<div class="meta-grid">'+
+'<div class="meta-item"><div class="meta-label">Avg RPN</div><div class="meta-value">'+summary.average_rpn+'</div></div>'+
+'<div class="meta-item"><div class="meta-label">Classes analyzed</div><div class="meta-value">'+summary.total_classes_analyzed+'</div></div>'+
+'</div></div></div>';
+
+    // Matrix — place dots INSIDE grid cells
+    // Map severity (1-10) to row (1-5): row = ceil((11 - severity) / 2)
+    // Map occurrence (1-10) to col (1-5): col = ceil(occurrence / 2)
+    // Grid is rendered top-to-bottom: row 1 = severity 10 (top), row 5 = severity 2 (bottom)
+    // Build cell map: key = 'row-col' -> array of classes sorted by RPN desc
+    var cellMap={};
+    all.forEach(function(c){
+      var row=Math.min(5,Math.max(1,Math.ceil((11-c.severity)/2)));
+      var col=Math.min(5,Math.max(1,Math.ceil(c.occurrence/2)));
+      var key=row+'-'+col;
+      if(!cellMap[key])cellMap[key]=[];
+      cellMap[key].push(c);
+    });
+    // Sort each cell by RPN descending so highest shows
+    for(var k in cellMap){cellMap[k].sort(function(a,b){return b.rpn-a.rpn;});}
+
+    var cellsHtml='';
+    for(var r=1;r<=5;r++){for(var co=1;co<=5;co++){
+      var sv=6-r;var ov=co;
+      var est=sv*ov*5;
+      var bg='';
+      if(est>=80)bg='background:rgba(248,81,73,.08);';
+      else if(est>=40)bg='background:rgba(210,153,34,.06);';
+      else if(est>=20)bg='background:rgba(56,139,253,.05);';
+      var ck=r+'-'+co;
+      var dotHtml='';
+      if(cellMap[ck]&&cellMap[ck].length>0){
+        var top=cellMap[ck][0];
+        var extra=cellMap[ck].length-1;
+        var tipText=esc(top.name)+' | RPN: '+top.rpn;
+        if(extra>0)tipText+=' +'+extra+' more';
+        dotHtml='<div class="dot dot-'+top.risk_level+' tip" data-tip="'+tipText+'"></div>';
+      }
+      cellsHtml+='<div class="matrix-cell" style="'+bg+'">'+dotHtml+'</div>';
+    }}
+
+    var matrixHtml=
+'<div class="matrix-section">'+
+'<div class="section-title">Risk matrix</div>'+
+'<div class="matrix-container">'+
+'<div class="matrix-labels-y"><span>10</span><span>8</span><span>6</span><span>4</span><span>2</span></div>'+
+'<div class="matrix-wrap">'+
+'<div class="matrix-grid">'+cellsHtml+'</div></div>'+
+'<div class="matrix-labels-x"><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span></div>'+
+'<div class="matrix-axis-label">Severity (Y) vs Occurrence (X)</div>'+
+'</div></div>';
+
+    // Top risks
+    var topHtml=
+'<div class="top-risks">'+
+'<div class="section-title">Top risks</div>'+
+all.slice(0,5).map(function(c,i){
+  return'<div class="risk-item">'+
+  '<span class="risk-rank">'+(i+1)+'</span>'+
+  '<span class="risk-name">'+esc(c.name)+'</span>'+
+  '<span class="badge badge-'+c.risk_level+'">'+riskLabel(c.risk_level)+'</span>'+
+  '<span class="rpn-badge rc-'+c.risk_level+'">'+c.rpn+'</span>'+
+  '</div>';
+}).join('')+'</div>';
+
+    // Table
+    var tableRows=all.map(function(c,i){
+      var rc=i%2===0?'row-even':'row-odd';
+      var ts=c.last_analyzed?c.last_analyzed.replace('T',' ').substring(0,19):'';
+      return'<tr class="'+rc+'">'+
+      '<td class="col-name">'+esc(c.name)+'</td>'+
+      '<td class="col-file" title="'+esc(c.file)+'">'+esc((c.file||'').split(/[\\/]/).pop()||c.file)+'</td>'+
+      '<td>'+c.severity+'</td><td>'+c.occurrence+'</td><td>'+c.detection+'</td>'+
+      '<td class="col-rpn rc-'+c.risk_level+'">'+c.rpn+'</td>'+
+      '<td><span class="badge badge-'+c.risk_level+'">'+riskLabel(c.risk_level)+'</span></td>'+
+      '<td style="font-size:10px">'+ts+'</td></tr>';
+    }).join('');
+
+    var tableHtml=
+'<div class="table-section">'+
+'<div class="section-title">All analyzed classes</div>'+
+'<table><thead><tr>'+
+'<th>Class</th><th>File</th><th>S</th><th>O</th><th>D</th><th>RPN</th><th>Risk</th><th>Last analyzed</th>'+
+'</tr></thead><tbody>'+tableRows+'</tbody></table></div>';
+
+    // Recommendations
+    var recHtml='';
+    if(classes.length){
+      var fname=(result.file||'').split(/[\\/]/).pop()||result.file;
+      recHtml='<div class="recs-section"><div class="section-title">Recommendations \u2014 '+esc(fname)+'</div>';
+      classes.forEach(function(c,ci){
+        var cardId='rec-card-'+ci;
+        recHtml+='<div class="rec-card rl-'+c.risk_level+'">'+
+        '<div class="rec-header" onclick="toggleRec(\''+cardId+'\')">'+
+        '<span class="rec-chevron" id="chev-'+cardId+'">\u25B6</span>'+
+        '<span class="rec-cls-name">'+esc(c.name)+'</span>'+
+        '<span class="badge badge-'+c.risk_level+'">'+riskLabel(c.risk_level)+'</span>'+
+        '<span class="rec-rpn rc-'+c.risk_level+'">RPN '+c.rpn+'</span>'+
+        '</div><div class="rec-body" id="'+cardId+'">';
+        c.recommendations.forEach(function(r){
+          recHtml+='<div class="rec-item">'+renderTag(r)+'</div>';
+        });
+        recHtml+='</div></div>';
+      });
+      recHtml+='</div>';
+    }
+
+    // Trend chart
+    var history=data.history||[];
+    var trendHtml='';
+    var trendFname=(result.file||'').split(/[\\/]/).pop()||result.file;
+    if(history.length>=2){
+      // Build per-class data: for each history index, record rpn or null (missing)
+      var classNames={};
+      history.forEach(function(entry){
+        (entry.classes||[]).forEach(function(c){classNames[c.name]=true;});
+      });
+      var riskColors={CRITICAL:'#f85149',HIGH:'#d29922',MEDIUM:'#388bfd',LOW:'#3fb950'};
+      // Build class data with per-save entries
+      var classData={};
+      var classIdx=0;
+      for(var cn in classNames){
+        classData[cn]={index:classIdx++,saves:[],latestRisk:'LOW',latestRpn:0};
+        history.forEach(function(entry,si){
+          var found=null;
+          (entry.classes||[]).forEach(function(c){if(c.name===cn)found=c;});
+          if(found){
+            classData[cn].saves.push({saveIdx:si,rpn:found.rpn,risk:found.risk_level,ts:entry.timestamp});
+            classData[cn].latestRisk=found.risk_level;
+            classData[cn].latestRpn=found.rpn;
+          }
+        });
+      }
+      // Compute maxRpn
+      var maxRpn=0;
+      for(var cn in classData){classData[cn].saves.forEach(function(s){if(s.rpn>maxRpn)maxRpn=s.rpn;});}
+      maxRpn=Math.ceil(maxRpn/100)*100||100;
+      var totalPts=history.length;
+      var W=600,H=160,padL=40,padR=10,padT=10,padB=24;
+      var chartW=W-padL-padR,chartH=H-padT-padB;
+      // Grid lines
+      var gridCount=4;
+      var gridSvg='';
+      for(var gi=0;gi<=gridCount;gi++){
+        var gy=padT+(chartH/gridCount)*gi;
+        var gv=Math.round(maxRpn-maxRpn*(gi/gridCount));
+        gridSvg+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-dasharray="4,4" opacity="0.4"/>';
+        gridSvg+='<text x="'+(padL-4)+'" y="'+(gy+3)+'" text-anchor="end" fill="var(--text-secondary)" font-size="10" font-family="var(--font)">'+gv+'</text>';
+      }
+      // X axis labels: "Save 1", "Save 2", etc.
+      var xlabels='';
+      history.forEach(function(entry,idx){
+        var x=totalPts>1?padL+(chartW/(totalPts-1))*idx:padL+chartW/2;
+        xlabels+='<text x="'+x+'" y="'+(H-2)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="9" font-family="var(--font)">'+(idx+1)+'</text>';
+      });
+      // Lines and dots per class
+      var linesSvg='',dotsSvg='';
+      for(var cn in classData){
+        var cd=classData[cn];
+        var color=riskColors[cd.latestRisk]||'#8b949e';
+        var jitter=cd.index*3;
+        // Build line segments: only connect consecutive saves
+        var segments=[];
+        var currentSeg=[];
+        for(var si=0;si<cd.saves.length;si++){
+          var s=cd.saves[si];
+          if(currentSeg.length>0){
+            var prev=cd.saves[si-1];
+            if(s.saveIdx!==prev.saveIdx+1){
+              if(currentSeg.length>1)segments.push(currentSeg);
+              currentSeg=[];
+            }
+          }
+          var x=totalPts>1?padL+(chartW/(totalPts-1))*s.saveIdx:padL+chartW/2;
+          var y=padT+chartH-(s.rpn/maxRpn)*chartH+jitter;
+          y=Math.max(padT,Math.min(H-padB,y));
+          currentSeg.push({x:x,y:y,s:s});
+        }
+        if(currentSeg.length>1)segments.push(currentSeg);
+        // Draw line segments
+        segments.forEach(function(seg){
+          var pts=seg.map(function(p){return p.x+','+p.y;}).join(' ');
+          linesSvg+='<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.5" opacity="0.8"/>';
+        });
+        // Draw dots for all saves
+        cd.saves.forEach(function(s){
+          var x=totalPts>1?padL+(chartW/(totalPts-1))*s.saveIdx:padL+chartW/2;
+          var y=padT+chartH-(s.rpn/maxRpn)*chartH+jitter;
+          y=Math.max(padT,Math.min(H-padB,y));
+          var ts=(s.ts||'').substring(11,19);
+          var saveNum=s.saveIdx+1;
+          var tipText=esc(cn)+'\nRPN: '+s.rpn+'\nSave '+saveNum+' \u2014 '+ts;
+          dotsSvg+='<circle class="trend-dot" cx="'+x+'" cy="'+y+'" r="5" fill="'+color+'" stroke="var(--bg-primary)" stroke-width="1.5" data-tip="'+tipText+'" onmouseenter="showTrendTip(evt,this)" onmouseleave="hideTrendTip()"/>';
+        });
+      }
+      // Axes
+      var axesSvg='<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB)+'" stroke="var(--border)" stroke-width="1"/>';
+      axesSvg+='<line x1="'+padL+'" y1="'+(H-padB)+'" x2="'+(W-padR)+'" y2="'+(H-padB)+'" stroke="var(--border)" stroke-width="1"/>';
+      // Legend
+      var legendHtml='<div class="trend-legend">';
+      for(var cn in classData){
+        var cd=classData[cn];
+        var lc=riskColors[cd.latestRisk]||'#8b949e';
+        legendHtml+='<div class="trend-legend-item"><span class="trend-legend-dot" style="background:'+lc+'"></span><span style="color:'+lc+'">'+esc(cn)+'</span><span class="trend-legend-rpn" style="color:'+lc+'">('+cd.latestRpn+')</span></div>';
+      }
+      legendHtml+='</div>';
+      trendHtml='<div class="trend-section" style="position:relative">'+
+        '<div class="section-title">RPN trend</div>'+
+        '<div class="trend-subtitle">Last '+history.length+' saves \u2014 '+esc(trendFname)+'</div>'+
+        legendHtml+
+        '<svg class="trend-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'+
+        gridSvg+axesSvg+xlabels+linesSvg+dotsSvg+
+        '</svg><div id="trend-tooltip" class="trend-tip" style="display:none"></div></div>';
+    }else{
+      trendHtml='<div class="trend-section">'+
+        '<div class="section-title">RPN trend</div>'+
+        '<div class="trend-placeholder">Save the file multiple times to see the RPN trend.</div></div>';
+    }
+
+    document.getElementById('dashboard').innerHTML=
+      statsHtml+healthHtml+trendHtml+
+      '<div class="two-col">'+matrixHtml+topHtml+'</div>'+
+      tableHtml+recHtml;
+
+    document.getElementById('footer').textContent=
+      'Auto-FMEA v1.0.0 \u2014 Updated: '+new Date().toLocaleTimeString()+' \u2014 '+result.file;
+  }
+
+  window.showTrendTip=function(evt,el){
+    var tip=document.getElementById('trend-tooltip');
+    if(!tip||!el)return;
+    var text=el.getAttribute('data-tip')||'';
+    tip.innerHTML=text.replace(/\n/g,'<br>');
+    tip.style.display='block';
+    tip.style.left=evt.clientX+'px';
+    tip.style.top=(evt.clientY-16)+'px';
+  };
+  window.hideTrendTip=function(){
+    var tip=document.getElementById('trend-tooltip');
+    if(tip)tip.style.display='none';
+  };
+
+  window.toggleRec=function(id){
+    var body=document.getElementById(id);
+    var chev=document.getElementById('chev-'+id);
+    if(body.classList.contains('open')){
+      body.classList.remove('open');
+      chev.classList.remove('open');
+    }else{
+      body.classList.add('open');
+      chev.classList.add('open');
+    }
+  };
+
+  var dataEl=document.getElementById('fmea-data');
+  if(dataEl){
+    try{
+      var data=JSON.parse(dataEl.textContent||'{}');
+      render(data);
+    }catch(e){
+      document.getElementById('dashboard').innerHTML='<p style="color:var(--risk-critical);padding:20px">Error parsing dashboard data: '+e+'</p>';
+    }
+  }
+})();
+</script>
+</body>
+</html>
